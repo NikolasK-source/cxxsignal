@@ -34,6 +34,7 @@ static void        dummy_alarm_handler(int) { ++alarm_counter; }
 int main() {
     auto tmp = signal(SIGALRM, dummy_alarm_handler);
     assert(tmp != SIG_ERR);
+    static_cast<void>(tmp);
 
     TestHandler        handler(SIGUSR1);
     TestHandler        handler2(SIGURG);

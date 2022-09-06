@@ -125,6 +125,16 @@ public:
      */
     [[maybe_unused]] inline void no_revoke(bool no_revoke = true) { revoke_on_destruction = !no_revoke; }
 
+    /**
+     * @brief wait for the signal
+     * @details if the handler is established, it is called once the signal arrives
+     * @param timeout timeout (default: no timeout)
+     * @exception std::system_error failed to perform action on sigset_t (should never happen)
+     * @exception std::system_error call of sigtimedwait or sigwaitinfo failed
+     * @exception std::system_error call of sigprocmask failed
+     */
+    bool wait(const struct timespec &timeout = {0, 0});
+
     friend class Ignore;
     friend class Default;
 };

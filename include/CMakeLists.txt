@@ -6,3 +6,4 @@
 target_sources(${Target} PRIVATE cxxsignal/SignalHandler.hpp)
 target_sources(${Target} PRIVATE cxxsignal/Ignore.hpp)
 target_sources(${Target} PRIVATE cxxsignal/Default.hpp)
+target_sources(${Target} PRIVATE cxxsignal.hpp)

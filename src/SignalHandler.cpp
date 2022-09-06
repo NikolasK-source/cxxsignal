@@ -130,4 +130,45 @@ bool SignalHandler::is_established() const {
     return sig_map.map[static_cast<std::size_t>(SIGNUM)] == this;
 }
 
+bool SignalHandler::wait(const struct timespec &timeout) {
+    // create sigset for blocking and sigwait
+    sigset_t block_set;
+    int      tmp = sigemptyset(&block_set);
+    if (tmp == -1) throw std::system_error(errno, std::generic_category(), "call of sigemptyset failed");
+    tmp = sigaddset(&block_set, SIGNUM);
+    if (tmp == -1) throw std::system_error(errno, std::generic_category(), "call of sigaddset failed");
+
+    // block signal and store previous set of blocked signals
+    sigset_t restore_mask;
+    tmp = sigprocmask(SIG_BLOCK, &block_set, &restore_mask);
+    if (tmp == -1) throw std::system_error(errno, std::generic_category(), "call of sigprocmask failed");
+
+    auto restore = [&restore_mask]() {
+        int tmp2 = sigprocmask(SIG_SETMASK, &restore_mask, nullptr);
+        if (tmp2 == -1) throw std::system_error(errno, std::generic_category(), "call of sigprocmask failed");
+    };
+
+    siginfo_t siginfo;
+
+    if (timeout.tv_sec | timeout.tv_nsec) {
+        tmp = sigtimedwait(&block_set, &siginfo, &timeout);
+        if (tmp == -1) {
+            if (errno == EAGAIN) {
+                restore();
+                return false;
+            } else
+                throw std::system_error(errno, std::generic_category(), "call of sigtimedwait failed");
+        }
+    } else {
+        tmp = sigwaitinfo(&block_set, &siginfo);
+        if (tmp == -1) throw std::system_error(errno, std::generic_category(), "call of sigwaitinfo failed");
+    }
+
+    // call handler if it is established
+    if (is_established()) handler(SIGNUM, &siginfo, nullptr);
+
+    restore();
+    return true;
+}
+
 }  // namespace cxxsignal
